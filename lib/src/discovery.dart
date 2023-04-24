@@ -15,10 +15,10 @@ class DeviceDiscoverer {
   /// defaults to port 1900 to be able to receive broadcast notifications
   /// and not just M-SEARCH replies.
   Future start({
-    bool ipv4: true,
-    bool ipv6: true,
-    Function(Exception) onError: _doNowt,
-    int port: 1900,
+    bool ipv4 = true,
+    bool ipv6 = true,
+    Function(Exception) onError = _doNowt,
+    int port = 1900,
   }) async {
     _interfaces = await NetworkInterface.list();
 
@@ -34,7 +34,7 @@ class DeviceDiscoverer {
   _createSocket(
     InternetAddress address,
     int port, {
-    Function(Exception) onError: _doNowt,
+    Function(Exception) onError = _doNowt,
   }) async {
     var socket = await RawDatagramSocket.bind(
       address,
@@ -162,7 +162,7 @@ class DeviceDiscoverer {
   }
 
   Future<List<DiscoveredClient>> discoverClients(
-      {Duration timeout: const Duration(seconds: 5)}) async {
+      {Duration timeout = const Duration(seconds: 5)}) async {
     var list = <DiscoveredClient>[];
 
     var sub = clients.listen((client) => list.add(client));
@@ -181,10 +181,10 @@ class DeviceDiscoverer {
   Timer? _discoverySearchTimer;
 
   Stream<DiscoveredClient> quickDiscoverClients(
-      {Duration? timeout: const Duration(seconds: 5),
-      Duration? searchInterval: const Duration(seconds: 10),
+      {Duration? timeout = const Duration(seconds: 5),
+      Duration? searchInterval = const Duration(seconds: 10),
       String? query,
-      bool unique: true}) async* {
+      bool unique = true}) async* {
     if (_sockets.isEmpty) {
       await start(port: 0);
     }
@@ -214,7 +214,7 @@ class DeviceDiscoverer {
   }
 
   Future<List<DiscoveredDevice>> discoverDevices(
-      {String? type, Duration timeout: const Duration(seconds: 5)}) {
+      {String? type, Duration timeout = const Duration(seconds: 5)}) {
     return discoverClients(timeout: timeout).then((clients) {
       if (clients.isEmpty) {
         return [];
@@ -257,8 +257,8 @@ class DeviceDiscoverer {
 
   Future<List<Device>> getDevices(
       {String? type,
-      Duration timeout: const Duration(seconds: 5),
-      bool silent: true}) async {
+      Duration timeout = const Duration(seconds: 5),
+      bool silent = true}) async {
     var results = await discoverDevices(type: type, timeout: timeout);
 
     var list = <Device>[];
@@ -287,16 +287,12 @@ class DiscoveredDevice {
   String? location;
 
   Future<Device?> getRealDevice() async {
-    HttpClientResponse response;
+    Response response;
 
     try {
-      var request = await UpnpCommon.httpClient
-          .getUrl(Uri.parse(location!))
-          .timeout(const Duration(seconds: 5),
-              onTimeout:
-                  (() => null) as FutureOr<HttpClientRequest> Function()?);
-
-      response = await request.close();
+      response = await UpnpCommon.httpClient()
+          .get(Uri.parse(location!))
+          .timeout(const Duration(seconds: 5));
     } catch (_) {
       return null;
     }
@@ -309,8 +305,7 @@ class DiscoveredDevice {
     XmlDocument doc;
 
     try {
-      var content =
-          await response.cast<List<int>>().transform(utf8.decoder).join();
+      String content = await response.body;
       doc = XmlDocument.parse(content);
     } on Exception catch (e) {
       throw new FormatException("ERROR: Failed to parse"
@@ -356,12 +351,7 @@ class DiscoveredClient {
       return Future.sync(() => null);
     }
 
-    var request = await UpnpCommon.httpClient
-        .getUrl(uri)
-        .timeout(const Duration(seconds: 10));
-
-    var response = await request.close();
-
+    Response response = await UpnpCommon.httpClient().get(uri).timeout(Duration(seconds: 5));
     if (response.statusCode != 200) {
       throw new Exception("ERROR: Failed to fetch device description."
           " Status Code: ${response.statusCode}");
@@ -370,8 +360,7 @@ class DiscoveredClient {
     XmlDocument doc;
 
     try {
-      var content =
-          await response.cast<List<int>>().transform(utf8.decoder).join();
+      String content = await response.body;
       doc = XmlDocument.parse(content);
     } on Exception catch (e) {
       throw new FormatException("ERROR: Failed to parse device"

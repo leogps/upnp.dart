@@ -140,7 +140,8 @@ class StateSubscription {
     var doc = XmlDocument.parse(content);
     var props = doc.rootElement.children.where((x) => x is XmlElement).toList();
     var map = <String, dynamic>{};
-    for (XmlElement prop in props as Iterable<XmlElement>) {
+    for (int i = 0; i < props.length; i++) {
+      XmlElement prop = props[i] as XmlElement;
       if (prop.children.isEmpty) {
         continue;
       }
@@ -178,26 +179,25 @@ class StateSubscription {
 
     var uri = Uri.parse(eventUrl!);
 
-    var request = await UpnpCommon.httpClient.openUrl("SUBSCRIBE", uri);
-
     var url = await _getCallbackUrl(uri, id);
     lastCallbackUrl = url;
 
-    request.headers.set("User-Agent", "UPNP.dart/1.0");
-    request.headers.set("ACCEPT", "*/*");
-    request.headers.set("CALLBACK", "<${url}>");
-    request.headers.set("NT", "upnp:event");
-    request.headers.set("TIMEOUT", "Second-${REFRESH}");
-    request.headers.set("HOST", "${request.uri.host}:${request.uri.port}");
-
-    var response = await request.close();
-    response.drain();
+    Request request = Request("SUBSCRIBE", uri);
+    request.headers.addAll({
+      "User-Agent": "UPNP.dart/1.0",
+      "ACCEPT": "*/*",
+      "CALLBACK": "<${url}>",
+      "NT": "upnp:event",
+      "TIMEOUT": "Second-${REFRESH}",
+      "HOST": "${uri.host}:${uri.port}"
+    });
+    StreamedResponse response = await UpnpCommon.httpClient().send(request);
 
     if (response.statusCode != HttpStatus.ok) {
       throw new Exception("Failed to subscribe.");
     }
 
-    _lastSid = response.headers.value("SID");
+    _lastSid = response.headers["SID"];
 
     _timer = new Timer(new Duration(seconds: REFRESH), () {
       _timer = null;
@@ -218,31 +218,25 @@ class StateSubscription {
       return;
     }
 
-    var request = await UpnpCommon.httpClient.openUrl("SUBSCRIBE", uri);
+    Request request = Request("SUBSCRIBE", uri);
+    request.headers.addAll({
+      "User-Agent": "UPNP.dart/1.0",
+      "ACCEPT": "*/*",
+      "TIMEOUT": "Second-${REFRESH}",
+      "SID": _lastSid!,
+      "HOST": "${uri.host}:${uri.port}"
+    });
+    StreamedResponse response = await UpnpCommon.httpClient().send(request)
+        .timeout(Duration(seconds: 10));
 
-    request.headers.set("User-Agent", "UPNP.dart/1.0");
-    request.headers.set("ACCEPT", "*/*");
-    request.headers.set("TIMEOUT", "Second-${REFRESH}");
-    request.headers.set("SID", _lastSid!);
-    request.headers.set("HOST", "${request.uri.host}:${request.uri.port}");
-
-    HttpClientResponse? response = await request.close().timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            return null;
-          } as FutureOr<HttpClientResponse> Function()?,
-        );
-
-    if (response != null) {
-      if (response.statusCode != HttpStatus.ok) {
-        _controller!.close();
-        return;
-      } else {
-        _timer = new Timer(new Duration(seconds: REFRESH), () {
-          _timer = null;
-          _refresh();
-        });
-      }
+    if (response.statusCode != HttpStatus.ok) {
+      _controller!.close();
+      return;
+    } else {
+      _timer = new Timer(new Duration(seconds: REFRESH), () {
+        _timer = null;
+        _refresh();
+      });
     }
   }
 
@@ -251,22 +245,16 @@ class StateSubscription {
     return "http://${host}:${manager.server!.port}/${id}";
   }
 
-  Future _unsub([bool close = false]) async {
-    var request = await UpnpCommon.httpClient
-        .openUrl("UNSUBSCRIBE", Uri.parse(eventUrl!));
-
-    request.headers.set("User-Agent", "UPNP.dart/1.0");
-    request.headers.set("ACCEPT", "*/*");
-    request.headers.set("SID", _lastSid!);
-
-    var response = await request.close().timeout(const Duration(seconds: 10),
-        onTimeout: () {
-          return null;
-        } as FutureOr<HttpClientResponse> Function()?);
-
-    if (response != null) {
-      response.drain();
-    }
+  Future _unsub() async {
+    Request request = Request("UNSUBSCRIBE", Uri.parse(eventUrl!));
+    request.headers.addAll({
+      "User-Agent": "UPNP.dart/1.0",
+      "ACCEPT": "*/*",
+      "SID": _lastSid!
+    });
+    await UpnpCommon.httpClient()
+        .send(request)
+        .timeout(const Duration(seconds: 10));
 
     if (_timer != null) {
       _timer!.cancel();

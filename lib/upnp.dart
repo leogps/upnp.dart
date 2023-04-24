@@ -4,6 +4,7 @@ import "dart:async";
 import "dart:convert";
 import "dart:io";
 
+import "package:http/http.dart";
 import "package:xml/xml.dart";
 
 import "package:crypto/crypto.dart";

@@ -1,7 +1,4 @@
-import "dart:async";
 import "package:upnp/upnp.dart";
-
-import "package:upnp/src/utils.dart";
 
 main() async {
   var discover = new DeviceDiscoverer();
@@ -17,7 +14,8 @@ main() async {
       Service? service;
 
       try {
-        service = await desc.getService(device).timeout(const Duration(seconds: 5));
+        service =
+        await desc.getService(device).timeout(const Duration(seconds: 60));
       } catch (e) {
         print(e);
       }
@@ -27,7 +25,8 @@ main() async {
           sub.subscribeToService(service).listen((value) {
             print("${device.friendlyName} - ${service!.id}: ${value}");
           }, onError: (e, stack) {
-            print("Error while subscribing to ${service!.type} for ${device.friendlyName}: ${e}");
+            print("Error while subscribing to ${service!.type} for ${device
+                .friendlyName}: ${e}");
           });
         } catch (e) {
           print(e);
@@ -35,13 +34,4 @@ main() async {
       }
     }
   }
-
-  new Timer(const Duration(seconds: 60), () {
-    print("Ended.");
-    sub.close();
-
-    Timer.run(() {
-      UpnpCommon.httpClient.close();
-    });
-  });
 }

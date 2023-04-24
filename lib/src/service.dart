@@ -38,12 +38,9 @@ class ServiceDescription {
       throw new Exception("Unable to fetch service, no SCPD URL.");
     }
 
-    var request = await UpnpCommon.httpClient
-        .getUrl(Uri.parse(scpdUrl!))
-        .timeout(const Duration(seconds: 5),
-            onTimeout: (() => null) as FutureOr<HttpClientRequest> Function()?);
-
-    var response = await request.close();
+    Response response = await UpnpCommon.httpClient()
+        .get(Uri.parse(scpdUrl!))
+        .timeout(const Duration(seconds: 5));
 
     if (response.statusCode != 200) {
       return null;
@@ -52,8 +49,7 @@ class ServiceDescription {
     XmlElement doc;
 
     try {
-      var content =
-          await response.cast<List<int>>().transform(utf8.decoder).join();
+      String content = await response.body;
       content = content.replaceAll("\u00EF\u00BB\u00BF", "");
       doc = XmlDocument.parse(content).rootElement;
     } catch (e) {
@@ -123,15 +119,15 @@ class Service {
       print("Send to ${controlUrl} (SOAPACTION: ${type}#${name}): ${body}");
     }
 
-    var request = await UpnpCommon.httpClient.postUrl(Uri.parse(controlUrl!));
-    request.headers.set("SOAPACTION", '"${type}#${name}"');
-    request.headers.set("Content-Type", 'text/xml; charset="utf-8"');
-    request.headers.set("User-Agent", 'CyberGarage-HTTP/1.0');
-    request.write(body);
-    var response = await request.close();
-
-    var content =
-        await response.cast<List<int>>().transform(utf8.decoder).join();
+    Response response = await UpnpCommon.httpClient().post(Uri.parse(controlUrl!),
+      body: body,
+      headers: {
+        "SOAPACTION": '"${type}#${name}"',
+        "Content-Type": 'text/xml; charset="utf-8"',
+        "User-Agent": 'CyberGarage-HTTP/1.0'
+      }
+    );
+    String content = await response.body;
 
     if (response.statusCode != 200) {
       try {

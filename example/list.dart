@@ -1,7 +1,6 @@
 import "dart:async";
 
 import "package:upnp/upnp.dart";
-import "package:upnp/src/utils.dart";
 
 Future printDevice(Device device) async {
   void prelude() {
@@ -88,5 +87,5 @@ main(List<String> args) async {
     await printDevice(device);
   }).asFuture();
 
-  UpnpCommon.httpClient.close();
+  // UpnpCommon.httpClient.close();
 }

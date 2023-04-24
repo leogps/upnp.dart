@@ -40,19 +40,12 @@ class DialScreen {
   }
 
   Future<bool> isIdle() async {
-    HttpClientResponse? response;
-
-    try {
-      response = await send("GET", "/apps");
-      if (response.statusCode == 302) {
-        return false;
-      }
-      return true;
-    } finally {
-      if (response != null) {
-        await response.drain();
-      }
+    StreamedResponse response;
+    response = await send("GET", "/apps");
+    if (response.statusCode == 302) {
+      return false;
     }
+    return true;
   }
 
   Future launch(String app, {payload}) async {
@@ -68,93 +61,68 @@ class DialScreen {
       payload = out;
     }
 
-    HttpClientResponse? response;
-    try {
-      response = await send("POST", "/apps/${app}", body: payload);
-      if (response.statusCode == 201) {
-        return true;
-      }
-      return false;
-    } finally {
-      if (response != null) {
-        await response.drain();
-      }
+    StreamedResponse? response;
+    response = await send("POST", "/apps/${app}", body: payload);
+    if (response.statusCode == 201) {
+      return true;
     }
+    return false;
   }
 
   Future<bool> hasApp(String app) async {
-    HttpClientResponse? response;
-    try {
-      response = await send("GET", "/apps/${app}");
-      if (response.statusCode == 404) {
-        return false;
-      }
-      return true;
-    } finally {
-      if (response != null) {
-        await response.drain();
-      }
+    StreamedResponse response;
+    response = await send("GET", "/apps/${app}");
+    if (response.statusCode == 404) {
+      return false;
     }
+    return true;
   }
 
   Future<String?> getCurrentApp() async {
-    HttpClientResponse? response;
-    try {
-      response = await send("GET", "/apps");
-      if (response.statusCode == 302) {
-        var loc = response.headers.value("location")!;
-        var uri = Uri.parse(loc);
-        return uri.pathSegments[1];
-      }
-      return null;
-    } finally {
-      if (response != null) {
-        await response.drain();
-      }
+    StreamedResponse response;
+    response = await send("GET", "/apps");
+    if (response.statusCode == 302) {
+      var loc = response.headers["location"]!;
+      var uri = Uri.parse(loc);
+      return uri.pathSegments[1];
     }
+    return null;
   }
 
   Future<bool> close([String? app]) async {
     var toClose = app == null ? await getCurrentApp() : app;
     if (toClose != null) {
-      HttpClientResponse? response;
-      try {
-        response = await send("DELETE", "/apps/${toClose}");
-        if (response.statusCode != 200) {
-          return false;
-        }
-        return true;
-      } finally {
-        if (response != null) {
-          await response.drain();
-        }
+      StreamedResponse response;
+      response = await send("DELETE", "/apps/${toClose}");
+      if (response.statusCode != 200) {
+        return false;
       }
+      return true;
     }
     return false;
   }
 
-  Future<HttpClientResponse> send(
+  Future<StreamedResponse> send(
     String method,
     String path, {
       body,
       Map<String, dynamic>? headers
   }) async {
-    var request = await UpnpCommon.httpClient.openUrl(
-      method, baseUri.resolve(path)
-    );
-
+    Request request = Request(method, baseUri.resolve(path));
     if (body is String) {
-      request.write(body);
+      request.body = body;
     } else if (body is List<int>) {
-      request.add(body);
+      request.bodyBytes = body;
     }
 
     if (headers != null) {
+      Map<String, String> map = {};
       for (String key in headers.keys) {
-        request.headers.set(key, headers[key]);
+        map.putIfAbsent(key, () => headers[key]);
       }
+      request.headers.addAll(map);
     }
 
-    return await request.close();
+    return await UpnpCommon.httpClient().send(request);
   }
 }

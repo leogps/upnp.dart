@@ -1,6 +1,6 @@
 library upnp.utils;
 
-import "dart:io";
+import 'package:http/http.dart' as http;
 
 import "package:xml/xml.dart" hide parse;
 
@@ -76,5 +76,8 @@ class XmlUtils {
 }
 
 class UpnpCommon {
-  static HttpClient httpClient = new HttpClient();
+  //static HttpClient httpClient = new HttpClient();
+  static http.Client httpClient() {
+    return http.Client();
+  }
 }

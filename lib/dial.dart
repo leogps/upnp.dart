@@ -1,7 +1,8 @@
 library upnp.dial;
 
 import "dart:async";
-import "dart:io";
+
+import "package:http/http.dart";
 
 import "upnp.dart";
 import "src/utils.dart";
