@@ -14,28 +14,31 @@ class DeviceDiscoverer {
 
   /// defaults to port 1900 to be able to receive broadcast notifications
   /// and not just M-SEARCH replies.
+  /// setting tracePackets to true causes all replies to be logged.
   Future start({
     bool ipv4 = true,
     bool ipv6 = true,
+    bool tracePackets = false,
     Function(Exception) onError = _doNowt,
     int port = 1900,
   }) async {
     _interfaces = await NetworkInterface.list();
 
     if (ipv4) {
-      await _createSocket(InternetAddress.anyIPv4, port, onError: onError);
+      await _createSocket(InternetAddress.anyIPv4, port, onError: onError, tracePackets: tracePackets);
     }
 
     if (ipv6) {
-      await _createSocket(InternetAddress.anyIPv6, port, onError: onError);
+      await _createSocket(InternetAddress.anyIPv6, port, onError: onError, tracePackets: tracePackets);
     }
   }
 
   _createSocket(
     InternetAddress address,
     int port, {
-    Function(Exception) onError = _doNowt,
-  }) async {
+        Function(Exception) onError = _doNowt,
+        bool tracePackets = false,
+      }) async {
     var socket = await RawDatagramSocket.bind(
       address,
       port,
@@ -43,7 +46,9 @@ class DeviceDiscoverer {
       reusePort: true,
     );
 
+    socket.writeEventsEnabled = true;
     socket.broadcastEnabled = true;
+    socket.writeEventsEnabled = true;
     socket.readEventsEnabled = true;
     socket.multicastHops = 50;
 
@@ -59,6 +64,13 @@ class DeviceDiscoverer {
           }
 
           var data = utf8.decode(packet.data);
+          if (tracePackets) {
+            try {
+              print(
+                  "(${packet.address}, ${packet.port}): Received data: $data");
+            } catch(_) {}
+          }
+
           var parts = data.split("\r\n");
           parts.removeWhere((x) => x.trim().isEmpty);
           var firstLine = parts.removeAt(0);
