@@ -20,10 +20,10 @@ class Router {
   }
 
   static Stream<Router> findAll({
-    bool silent: true,
-    bool unique: true,
-    bool enableIpv4Only: true,
-    Duration timeout: const Duration(seconds: 10)
+    bool silent = true,
+    bool unique = true,
+    bool enableIpv4Only = true,
+    Duration timeout = const Duration(seconds: 10)
   }) async* {
     var discovery = new DeviceDiscoverer();
     await discovery.start(ipv4: true, ipv6: !enableIpv4Only);
