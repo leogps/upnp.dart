@@ -29,6 +29,6 @@ main() async {
 
   httpServer.listen(server.handleRequest);
 
-  var discovery = new UpnpDiscoveryServer(device, "http://192.168.1.2:4021/upnp/root.xml");
+  var discovery = new UpnpDiscoveryServer(device, "http://192.168.1.142:4021/upnp/root.xml");
   await discovery.start();
 }

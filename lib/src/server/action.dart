@@ -9,7 +9,7 @@ class UpnpHostAction {
   final HostActionHandler? handler;
 
   UpnpHostAction(this.name,
-      {this.inputs: const [], this.outputs: const [], this.handler});
+      {this.inputs = const [], this.outputs = const [], this.handler});
 
   void applyToXml(XmlBuilder x) {
     x.element("action", nest: () {

@@ -29,7 +29,7 @@ class UpnpHostUtils {
         .address;
   }
 
-  static String generateBasicId({int length: 30}) {
+  static String generateBasicId({int length = 30}) {
     var r0 = new Random();
     var buffer = new StringBuffer();
     for (int i = 1; i <= length; i++) {
@@ -48,7 +48,7 @@ class UpnpHostUtils {
     return buffer.toString();
   }
 
-  static String generateToken({int length: 50}) {
+  static String generateToken({int length = 50}) {
     var r0 = new Random();
     var buffer = new StringBuffer();
     for (int i = 1; i <= length; i++) {

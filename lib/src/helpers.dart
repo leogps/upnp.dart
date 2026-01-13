@@ -7,8 +7,8 @@ class WemoHelper {
         .rootElement;
     var attr = {};
     doc.children.whereType<XmlElement>().forEach((element) {
-      var name = element.findElements("name").first.text.trim();
-      dynamic value = element.findElements("value").first.text.trim();
+      var name = element.findElements("name").first.value?.trim();
+      dynamic value = element.findElements("value").first.value?.trim();
       value = num.tryParse(value) ?? value;
 
       value = (value == "true" || value == "false") ? value == "true" : value;

@@ -2,7 +2,7 @@ part of upnp.dial;
 
 class DialScreen {
   static Stream<DialScreen> find({
-    bool silent: true
+    bool silent = true
   }) async* {
     var discovery = new DeviceDiscoverer();
     var ids = new Set<String?>();

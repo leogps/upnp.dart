@@ -75,8 +75,7 @@ class Action {
       print("Got Action Response: ${response.toXmlString()}");
     }
 
-    if (response is XmlElement &&
-        !response.name.local.contains("Response") &&
+    if (!response.name.local.contains("Response") &&
         response.children.length > 1) {
       response = response.children[1] as XmlElement;
     }
@@ -100,7 +99,7 @@ class Action {
         response.children.whereType<XmlElement>().toList();
     var map = <String, String>{};
     for (XmlElement r in results) {
-      map[r.name.local] = r.text;
+      map[r.name.local] = r.value!;
     }
     return map;
   }

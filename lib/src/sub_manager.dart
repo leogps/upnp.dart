@@ -151,12 +151,12 @@ class StateSubscription {
       String p = child.name.local;
 
       if (lastStateVariable != null && lastStateVariable!.name == p) {
-        var value = XmlUtils.asRichValue(child.text);
+        var value = XmlUtils.asRichValue(child.value!);
         _controller!.add(value);
         _lastValue = value;
         return;
       } else if (lastStateVariable == null) {
-        map[p] = XmlUtils.asRichValue(child.text);
+        map[p] = XmlUtils.asRichValue(child.value!);
       }
     }
 

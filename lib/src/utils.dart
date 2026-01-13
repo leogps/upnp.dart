@@ -2,7 +2,7 @@ library upnp.utils;
 
 import 'package:http/http.dart' as http;
 
-import "package:xml/xml.dart" hide parse;
+import "package:xml/xml.dart";
 
 class UpnpException {
   final XmlElement element;
@@ -23,7 +23,7 @@ class XmlUtils {
     if (elements.isEmpty) {
       return null;
     }
-    return elements.first.text;
+    return elements.first.value;
   }
 
   static String unescape(String input) {
